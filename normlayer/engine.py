@@ -52,6 +52,10 @@ class PolicyEngine:
             `aws_bucket` is set.
         supervisor_agent: Callable invoked for ``"escalate"`` violations.
             Receives a single :class:`ViolationEvent` argument.
+        violation_logger: An explicit :class:`ViolationLogger` instance. If
+            provided, it takes precedence over ``aws_bucket``/``aws_region``.
+            If not provided but ``aws_bucket`` is set, a logger is
+            auto-constructed.
     """
 
     def __init__(
@@ -60,12 +64,26 @@ class PolicyEngine:
         aws_bucket: str | None = None,
         aws_region: str | None = None,
         supervisor_agent: Callable[[ViolationEvent], Any] | None = None,
+        violation_logger: Any | None = None,
     ) -> None:
         self.policies = policies
         self.aws_bucket = aws_bucket
         self.aws_region = aws_region
         self.supervisor_agent = supervisor_agent
         self._violation_log: list[ViolationEvent] = []
+
+        # Resolve logger: explicit > auto-construct from bucket > None
+        if violation_logger is not None:
+            self._logger = violation_logger
+        elif aws_bucket is not None:
+            from normlayer.logging.violation_logger import ViolationLogger
+
+            self._logger = ViolationLogger(
+                bucket=aws_bucket,
+                region=aws_region or "us-east-1",
+            )
+        else:
+            self._logger = None
 
     # ------------------------------------------------------------------
     # Public evaluation API
@@ -264,31 +282,27 @@ class PolicyEngine:
             pass  # Already appended to _violation_log and shipped to S3.
 
     def _ship_to_s3(self, event: ViolationEvent) -> None:
-        """Ship a violation event to S3 as a JSON object.
+        """Ship a violation event to S3 via the configured ViolationLogger.
 
-        No-op when `aws_bucket` is not configured. Failures are printed but
+        No-op when no logger is configured. Failures are printed but
         never re-raised — a logging error must never interrupt the pipeline.
 
         Args:
             event: The :class:`ViolationEvent` to persist.
         """
-        if self.aws_bucket is None:
+        if self._logger is None:
             return
         try:
-            import json
-
-            import boto3
-
-            client = boto3.client("s3", region_name=self.aws_region)
-            key = (
-                f"violations/{event.timestamp}/{event.agent_id}/"
-                f"{event.policy_violated}.json"
-            )
-            client.put_object(
-                Bucket=self.aws_bucket,
-                Key=key,
-                Body=json.dumps(event.model_dump()),
-                ContentType="application/json",
-            )
+            self._logger.ship(event)
         except Exception as exc:
             print(f"[NormLayer] S3 logging failed: {exc}")
+
+    def flush_violations(self) -> int:
+        """Flush any buffered violation events to S3.
+
+        Returns:
+            Number of events flushed. Returns 0 if no logger is configured.
+        """
+        if self._logger is None:
+            return 0
+        return self._logger.flush()

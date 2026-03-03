@@ -1,9 +1,12 @@
 """Tests for PolicyEngine — check, async_check, handlers, enforce/wrap decorators."""
 
+from unittest.mock import MagicMock
+
 import pytest
 
 from normlayer.base_policy import AgentMessage, BasePolicy, PolicyResult
 from normlayer.engine import EnforcementError, PolicyEngine
+from normlayer.logging.violation_logger import ViolationLogger
 from normlayer.testing import MockMessage
 
 # ---------------------------------------------------------------------------
@@ -325,3 +328,76 @@ class TestEngineEnforce:
 
         with pytest.raises(EnforcementError):
             await agent(_msg())
+
+
+# ---------------------------------------------------------------------------
+# ViolationLogger integration
+# ---------------------------------------------------------------------------
+
+
+class TestEngineViolationLogger:
+    def test_auto_constructs_logger_from_bucket(self):
+        engine = PolicyEngine(
+            policies=[AlwaysPassPolicy()],
+            aws_bucket="my-bucket",
+            aws_region="us-west-2",
+        )
+        assert engine._logger is not None
+        assert isinstance(engine._logger, ViolationLogger)
+        assert engine._logger.bucket == "my-bucket"
+        assert engine._logger.region == "us-west-2"
+
+    def test_no_logger_when_no_bucket(self):
+        engine = PolicyEngine(policies=[AlwaysPassPolicy()])
+        assert engine._logger is None
+
+    def test_custom_logger_takes_precedence(self):
+        custom = MagicMock()
+        engine = PolicyEngine(
+            policies=[AlwaysPassPolicy()],
+            aws_bucket="ignored",
+            violation_logger=custom,
+        )
+        assert engine._logger is custom
+
+    def test_ship_delegates_to_logger(self):
+        mock_logger = MagicMock()
+        engine = PolicyEngine(
+            policies=[AlwaysWarnPolicy()],
+            violation_logger=mock_logger,
+        )
+        engine.check(_msg())
+        mock_logger.ship.assert_called_once()
+        event = mock_logger.ship.call_args[0][0]
+        assert event.policy_violated == "AlwaysWarn"
+
+    def test_ship_no_op_without_logger(self):
+        """No logger configured — _ship_to_s3 should silently do nothing."""
+        engine = PolicyEngine(policies=[AlwaysWarnPolicy()])
+        engine.check(_msg())  # should not raise
+        assert len(engine.violations) == 1
+
+    def test_ship_failure_does_not_raise(self, capsys):
+        mock_logger = MagicMock()
+        mock_logger.ship.side_effect = RuntimeError("S3 down")
+        engine = PolicyEngine(
+            policies=[AlwaysWarnPolicy()],
+            violation_logger=mock_logger,
+        )
+        engine.check(_msg())  # should not raise
+        captured = capsys.readouterr()
+        assert "S3 logging failed" in captured.out
+
+    def test_flush_violations_delegates(self):
+        mock_logger = MagicMock()
+        mock_logger.flush.return_value = 5
+        engine = PolicyEngine(
+            policies=[AlwaysPassPolicy()],
+            violation_logger=mock_logger,
+        )
+        assert engine.flush_violations() == 5
+        mock_logger.flush.assert_called_once()
+
+    def test_flush_violations_returns_zero_without_logger(self):
+        engine = PolicyEngine(policies=[AlwaysPassPolicy()])
+        assert engine.flush_violations() == 0
