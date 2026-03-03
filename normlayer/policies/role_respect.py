@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from normlayer.base_policy import AgentMessage, BasePolicy, HandlerType, PolicyResult
 
 
@@ -60,7 +62,7 @@ class RoleRespect(BasePolicy):
             kw.lower() for kw in (forbidden_keywords or [])
         ]
 
-    def evaluate(self, message: AgentMessage, context: dict) -> PolicyResult:
+    def evaluate(self, message: AgentMessage, context: dict[str, Any]) -> PolicyResult:
         """Evaluate whether the sending agent respects its assigned role.
 
         Checks are applied in this order:

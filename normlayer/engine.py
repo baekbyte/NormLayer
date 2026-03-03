@@ -92,7 +92,7 @@ class PolicyEngine:
     def check(
         self,
         message: AgentMessage,
-        context: dict | None = None,
+        context: dict[str, Any] | None = None,
     ) -> list[PolicyResult]:
         """Run all policies against a message synchronously.
 
@@ -122,7 +122,7 @@ class PolicyEngine:
     async def async_check(
         self,
         message: AgentMessage,
-        context: dict | None = None,
+        context: dict[str, Any] | None = None,
     ) -> list[PolicyResult]:
         """Run all policies against a message asynchronously.
 
@@ -153,7 +153,7 @@ class PolicyEngine:
     # Decorator / wrap API
     # ------------------------------------------------------------------
 
-    def enforce(self, func: Callable) -> Callable:
+    def enforce(self, func: Callable[..., Any]) -> Callable[..., Any]:
         """Decorator that wraps a synchronous agent function with policy enforcement.
 
         The decorated function must accept ``(message: AgentMessage, context: dict)``
@@ -175,7 +175,7 @@ class PolicyEngine:
         @functools.wraps(func)
         def wrapper(
             message: AgentMessage,
-            context: dict | None = None,
+            context: dict[str, Any] | None = None,
             **kwargs: Any,
         ) -> Any:
             self.check(message, context)
@@ -183,7 +183,7 @@ class PolicyEngine:
 
         return wrapper
 
-    def async_enforce(self, func: Callable) -> Callable:
+    def async_enforce(self, func: Callable[..., Any]) -> Callable[..., Any]:
         """Decorator that wraps an async agent function with policy enforcement.
 
         Args:
@@ -201,7 +201,7 @@ class PolicyEngine:
         @functools.wraps(func)
         async def wrapper(
             message: AgentMessage,
-            context: dict | None = None,
+            context: dict[str, Any] | None = None,
             **kwargs: Any,
         ) -> Any:
             await self.async_check(message, context)
@@ -209,7 +209,7 @@ class PolicyEngine:
 
         return wrapper
 
-    def wrap(self, agent: Callable) -> Callable:
+    def wrap(self, agent: Callable[..., Any]) -> Callable[..., Any]:
         """Wrap an existing sync agent callable with policy enforcement.
 
         Alias for :meth:`enforce` — convenient when wrapping agents you
@@ -247,7 +247,7 @@ class PolicyEngine:
         self,
         result: PolicyResult,
         message: AgentMessage,
-        context: dict,
+        context: dict[str, Any],
     ) -> None:
         """Record a violation and execute the appropriate handler.
 
@@ -305,4 +305,4 @@ class PolicyEngine:
         """
         if self._logger is None:
             return 0
-        return self._logger.flush()
+        return int(self._logger.flush())

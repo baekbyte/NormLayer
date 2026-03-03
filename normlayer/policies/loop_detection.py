@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from difflib import SequenceMatcher
 
+from typing import Any
+
 from normlayer.base_policy import AgentMessage, BasePolicy, HandlerType, PolicyResult
 
 
@@ -45,7 +47,7 @@ class LoopDetection(BasePolicy):
         self.similarity_threshold = similarity_threshold
         self.window_size = window_size
 
-    def evaluate(self, message: AgentMessage, context: dict) -> PolicyResult:
+    def evaluate(self, message: AgentMessage, context: dict[str, Any]) -> PolicyResult:
         """Check whether the sending agent is stuck in a repetitive loop.
 
         Args:

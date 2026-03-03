@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
-from normlayer.base_policy import AgentMessage, BasePolicy, HandlerType, PolicyResult
+from typing import Any
+
+from normlayer.base_policy import AgentMessage, BasePolicy, HandlerType, PolicyResult, SeverityLevel
 
 _POSITIVE_KEYWORDS: set[str] = {
     "agree",
@@ -58,7 +60,7 @@ class CoalitionConsistency(BasePolicy):
         self.coalitions: dict[str, list[str]] = coalitions or {}
         self.consistency_threshold = consistency_threshold
 
-    def evaluate(self, message: AgentMessage, context: dict) -> PolicyResult:
+    def evaluate(self, message: AgentMessage, context: dict[str, Any]) -> PolicyResult:
         """Evaluate whether this agent's behavior is consistent across coalitions.
 
         Args:
@@ -135,7 +137,7 @@ class CoalitionConsistency(BasePolicy):
         if passed:
             return self._pass(sender)
 
-        severity = (
+        severity: SeverityLevel = (
             "high"
             if discrepancy > 2 * self.consistency_threshold
             else "medium"

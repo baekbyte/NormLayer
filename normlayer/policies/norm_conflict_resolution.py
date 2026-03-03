@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
-from normlayer.base_policy import AgentMessage, BasePolicy, HandlerType, PolicyResult
+from typing import Any
+
+from normlayer.base_policy import AgentMessage, BasePolicy, HandlerType, PolicyResult, SeverityLevel
 
 _DEFAULT_CONTRADICTION_PAIRS: list[tuple[str, str]] = [
     ("brief", "thorough"),
@@ -51,7 +53,7 @@ class NormConflictResolution(BasePolicy):
         self.contradiction_pairs = contradiction_pairs or _DEFAULT_CONTRADICTION_PAIRS
         self.conflict_threshold = conflict_threshold
 
-    def evaluate(self, message: AgentMessage, context: dict) -> PolicyResult:
+    def evaluate(self, message: AgentMessage, context: dict[str, Any]) -> PolicyResult:
         """Evaluate whether the sender's directives contain contradictions.
 
         Args:
@@ -87,7 +89,7 @@ class NormConflictResolution(BasePolicy):
             return self._pass(sender)
 
         violation_score = min(conflict_count / max(self.conflict_threshold, 1), 1.0)
-        severity = "high" if conflict_count >= 2 * self.conflict_threshold else "medium"
+        severity: SeverityLevel = "high" if conflict_count >= 2 * self.conflict_threshold else "medium"
 
         return PolicyResult(
             passed=False,

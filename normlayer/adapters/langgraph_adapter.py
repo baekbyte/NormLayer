@@ -54,10 +54,10 @@ class LangGraphAdapter:
         Returns:
             An :class:`AgentMessage`.
         """
-        sender = getattr(msg, "name", None) or getattr(msg, "type", "unknown")
-        metadata = getattr(msg, "additional_kwargs", {})
+        sender: str = str(getattr(msg, "name", None) or getattr(msg, "type", "unknown"))
+        metadata: dict[str, Any] = getattr(msg, "additional_kwargs", {})
         return AgentMessage(
-            content=getattr(msg, "content", ""),
+            content=str(getattr(msg, "content", "")),
             sender=sender,
             metadata=metadata if isinstance(metadata, dict) else {},
         )
@@ -88,7 +88,7 @@ class _WrappedGraph:
     def __getattr__(self, name: str) -> Any:
         return getattr(self._graph, name)
 
-    def invoke(self, state: dict, **kwargs: Any) -> dict:
+    def invoke(self, state: dict[str, Any], **kwargs: Any) -> dict[str, Any]:
         """Run the graph and check new messages against the policy stack.
 
         Args:
@@ -102,11 +102,11 @@ class _WrappedGraph:
             EnforcementError: If a policy with ``handler="block"`` fires.
         """
         original_count = len(state.get(self._messages_key, []))
-        result_state = self._graph.invoke(state, **kwargs)
+        result_state: dict[str, Any] = self._graph.invoke(state, **kwargs)
         self._check_new_messages(result_state, original_count)
         return result_state
 
-    async def ainvoke(self, state: dict, **kwargs: Any) -> dict:
+    async def ainvoke(self, state: dict[str, Any], **kwargs: Any) -> dict[str, Any]:
         """Async version of :meth:`invoke`.
 
         Args:
@@ -120,11 +120,11 @@ class _WrappedGraph:
             EnforcementError: If a policy with ``handler="block"`` fires.
         """
         original_count = len(state.get(self._messages_key, []))
-        result_state = await self._graph.ainvoke(state, **kwargs)
+        result_state: dict[str, Any] = await self._graph.ainvoke(state, **kwargs)
         await self._async_check_new_messages(result_state, original_count)
         return result_state
 
-    def _check_new_messages(self, result_state: dict, original_count: int) -> None:
+    def _check_new_messages(self, result_state: dict[str, Any], original_count: int) -> None:
         """Check each new message via the engine (sync)."""
         all_messages = result_state.get(self._messages_key, [])
         new_messages = all_messages[original_count:]
@@ -133,7 +133,7 @@ class _WrappedGraph:
             self._engine.check(agent_msg, context={"state": result_state})
 
     async def _async_check_new_messages(
-        self, result_state: dict, original_count: int
+        self, result_state: dict[str, Any], original_count: int
     ) -> None:
         """Check each new message via the engine (async)."""
         all_messages = result_state.get(self._messages_key, [])

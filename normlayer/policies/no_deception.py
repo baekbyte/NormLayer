@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from normlayer.base_policy import AgentMessage, BasePolicy, HandlerType, PolicyResult
 
 _DEFAULT_MODEL = "all-MiniLM-L6-v2"
@@ -43,9 +45,9 @@ class NoDeception(BasePolicy):
         super().__init__(handler=handler)
         self.threshold = threshold
         self.model_name = model_name
-        self._model = None  # Loaded lazily on first call to score_faithfulness.
+        self._model: Any = None  # Loaded lazily on first call to score_faithfulness.
 
-    def _get_model(self):
+    def _get_model(self) -> Any:
         """Return the SentenceTransformer model, loading it on first access.
 
         Returns:
@@ -82,7 +84,7 @@ class NoDeception(BasePolicy):
         embeddings = model.encode([original, summary], convert_to_tensor=True)
         return float(util.cos_sim(embeddings[0], embeddings[1]))
 
-    def evaluate(self, message: AgentMessage, context: dict) -> PolicyResult:
+    def evaluate(self, message: AgentMessage, context: dict[str, Any]) -> PolicyResult:
         """Evaluate whether the message faithfully represents its source.
 
         Requires ``context["original_message"]`` to be set to the source text.

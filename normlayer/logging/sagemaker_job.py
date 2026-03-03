@@ -177,4 +177,4 @@ class SageMakerAuditJob:
         """
         client = self._get_client()
         resp = client.describe_processing_job(ProcessingJobName=job_name)
-        return resp["ProcessingJobStatus"]
+        return str(resp["ProcessingJobStatus"])

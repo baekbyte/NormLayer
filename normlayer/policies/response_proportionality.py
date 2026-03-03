@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
-from normlayer.base_policy import AgentMessage, BasePolicy, HandlerType, PolicyResult
+from typing import Any
+
+from normlayer.base_policy import AgentMessage, BasePolicy, HandlerType, PolicyResult, SeverityLevel
 
 
 class ResponseProportionality(BasePolicy):
@@ -34,7 +36,7 @@ class ResponseProportionality(BasePolicy):
         self.max_ratio = max_ratio
         self.min_ratio = min_ratio
 
-    def evaluate(self, message: AgentMessage, context: dict) -> PolicyResult:
+    def evaluate(self, message: AgentMessage, context: dict[str, Any]) -> PolicyResult:
         """Evaluate whether the response length is proportionate to the input.
 
         Args:
@@ -58,7 +60,7 @@ class ResponseProportionality(BasePolicy):
 
         if ratio > self.max_ratio:
             score = min((ratio - self.max_ratio) / self.max_ratio, 1.0)
-            severity = "high" if ratio > 2 * self.max_ratio else "medium"
+            severity: SeverityLevel = "high" if ratio > 2 * self.max_ratio else "medium"
             return PolicyResult(
                 passed=False,
                 violation_score=score,
@@ -74,14 +76,14 @@ class ResponseProportionality(BasePolicy):
 
         if ratio < self.min_ratio:
             score = min((self.min_ratio - ratio) / self.min_ratio, 1.0)
-            severity = "high" if ratio < self.min_ratio / 2 else "medium"
+            sev: SeverityLevel = "high" if ratio < self.min_ratio / 2 else "medium"
             return PolicyResult(
                 passed=False,
                 violation_score=score,
                 policy_name=self.name,
                 agent_id=message.sender,
                 handler=self.handler,
-                severity=severity,
+                severity=sev,
                 details=(
                     f"Agent '{message.sender}' response is disproportionately short: "
                     f"ratio {ratio:.2f} is below min {self.min_ratio}."

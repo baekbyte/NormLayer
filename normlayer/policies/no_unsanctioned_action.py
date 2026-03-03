@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
-from normlayer.base_policy import AgentMessage, BasePolicy, HandlerType, PolicyResult
+from typing import Any
+
+from normlayer.base_policy import AgentMessage, BasePolicy, HandlerType, PolicyResult, SeverityLevel
 
 _ACTION_KEYWORDS: set[str] = {
     "deploy",
@@ -68,7 +70,7 @@ class NoUnsanctionedAction(BasePolicy):
             f.lower() for f in (global_forbidden or [])
         ]
 
-    def evaluate(self, message: AgentMessage, context: dict) -> PolicyResult:
+    def evaluate(self, message: AgentMessage, context: dict[str, Any]) -> PolicyResult:
         """Evaluate whether the sender's actions are sanctioned.
 
         Args:
@@ -138,7 +140,7 @@ class NoUnsanctionedAction(BasePolicy):
             return self._pass(sender)
 
         violation_score = min(len(unsanctioned) / len(extracted), 1.0)
-        severity = "high" if len(unsanctioned) > len(extracted) / 2 else "medium"
+        severity: SeverityLevel = "high" if len(unsanctioned) > len(extracted) / 2 else "medium"
 
         return PolicyResult(
             passed=False,

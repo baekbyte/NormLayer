@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from normlayer.base_policy import AgentMessage, BasePolicy, HandlerType, PolicyResult
 
 _CONFLICT_KEYWORDS: set[str] = {
@@ -57,7 +59,7 @@ class EscalateOnConflict(BasePolicy):
         self.conflict_threshold = conflict_threshold
         self.to = to
 
-    def evaluate(self, message: AgentMessage, context: dict) -> PolicyResult:
+    def evaluate(self, message: AgentMessage, context: dict[str, Any]) -> PolicyResult:
         """Evaluate whether inter-agent conflict has exceeded the threshold.
 
         Args:

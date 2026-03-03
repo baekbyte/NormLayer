@@ -5,7 +5,7 @@ from __future__ import annotations
 import hashlib
 from abc import ABC, abstractmethod
 from datetime import datetime, timezone
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -26,7 +26,7 @@ class AgentMessage(BaseModel):
     content: str
     sender: str
     recipient: str | None = None
-    metadata: dict = Field(default_factory=dict)
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
 
 class PolicyResult(BaseModel):
@@ -80,7 +80,7 @@ class ViolationEvent(BaseModel):
         cls,
         result: PolicyResult,
         message: AgentMessage,
-        context: dict,
+        context: dict[str, Any],
     ) -> ViolationEvent:
         """Construct a ViolationEvent from a failed PolicyResult.
 
@@ -133,7 +133,7 @@ class BasePolicy(ABC):
         self.handler = handler
 
     @abstractmethod
-    def evaluate(self, message: AgentMessage, context: dict) -> PolicyResult:
+    def evaluate(self, message: AgentMessage, context: dict[str, Any]) -> PolicyResult:
         """Evaluate a message against this policy synchronously.
 
         Args:
@@ -150,7 +150,7 @@ class BasePolicy(ABC):
     async def async_evaluate(
         self,
         message: AgentMessage,
-        context: dict,
+        context: dict[str, Any],
     ) -> PolicyResult:
         """Evaluate a message against this policy asynchronously.
 

@@ -6,6 +6,8 @@ synchronous, and fully deterministic.
 
 from __future__ import annotations
 
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 from normlayer.base_policy import AgentMessage
@@ -24,7 +26,7 @@ class MockMessage(BaseModel):
     content: str
     sender: str
     recipient: str | None = None
-    metadata: dict = Field(default_factory=dict)
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
     def to_agent_message(self) -> AgentMessage:
         """Convert to an AgentMessage for use with policies and the engine.
@@ -82,7 +84,7 @@ class MockAgent:
     def __call__(
         self,
         message: AgentMessage | None = None,
-        context: dict | None = None,
+        context: dict[str, Any] | None = None,
     ) -> AgentMessage:
         """Return the next scripted response as an AgentMessage.
 
