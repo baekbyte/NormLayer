@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "normlayer"
-version = "0.1.0"
+version = "0.2.0"
 description = "Framework-agnostic Python SDK for enforcing behavioral policies between agents in multi-agent pipelines"
 readme = "README.md"
 license = { text = "MIT" }
