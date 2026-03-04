@@ -1,7 +1,8 @@
 """Master integration test runner.
 
 Runs all E2E integration tests in the recommended order.
-Set SKIP_AWS=1 to skip AWS tests, SKIP_SAGEMAKER=1 to skip only SageMaker.
+Set SKIP_AWS=1 to skip AWS tests, SKIP_SAGEMAKER=1 to skip only SageMaker,
+SKIP_LLM=1 to skip LLM-as-a-judge tests.
 
 Prerequisites:
     pip install normlayer[all] langgraph langchain-anthropic crewai crewai-tools pyautogen
@@ -31,6 +32,7 @@ TESTS = [
     ("LangGraph Adapter", "test_langgraph_e2e.py", False),
     ("CrewAI Adapter", "test_crewai_e2e.py", False),
     ("AutoGen Adapter", "test_autogen_e2e.py", False),
+    ("LLM-as-a-Judge", "test_llm_judge_e2e.py", False),
     ("AWS S3 Logging", "test_aws_e2e.py", True),
     ("SageMaker Audit Job", "test_sagemaker_e2e.py", True),
 ]
@@ -39,6 +41,7 @@ TESTS = [
 def main() -> None:
     skip_aws = os.environ.get("SKIP_AWS", "0") == "1"
     skip_sagemaker = os.environ.get("SKIP_SAGEMAKER", "0") == "1"
+    skip_llm = os.environ.get("SKIP_LLM", "0") == "1"
 
     print("=" * 60)
     print("NormLayer End-to-End Integration Tests")
@@ -49,6 +52,10 @@ def main() -> None:
     for name, script, is_aws in TESTS:
         if is_aws and skip_aws:
             print(f"\n>>> SKIPPING {name} (SKIP_AWS=1)")
+            results.append((name, "SKIPPED"))
+            continue
+        if script == "test_llm_judge_e2e.py" and skip_llm:
+            print(f"\n>>> SKIPPING {name} (SKIP_LLM=1)")
             results.append((name, "SKIPPED"))
             continue
         if script == "test_sagemaker_e2e.py" and skip_sagemaker:
