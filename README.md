@@ -9,7 +9,7 @@
 
 ## The Problem
 
-When multiple agents work together (one planning, one executing, one reviewing) there is no standard way to enforce *how they behave toward each other*. Existing safety tools focus on agent-to-human behavior. NormLayer focuses on **agent-to-agent behavior**: detecting deception between agents, enforcing role boundaries, catching collusion, and escalating conflicts — all at runtime, across any framework.
+When multiple agents work together (one planning, one executing, one reviewing) there is no standard way to enforce *how they behave toward each other*. Existing safety tools focus on agent-to-human behavior. NormLayer focuses on **agent-to-agent behavior**: detecting deception between agents, enforcing role boundaries, catching collusion, and escalating conflicts (all at runtime, across any framework).
 
 ## Installation
 
@@ -149,6 +149,49 @@ See the `examples/` directory for demo notebooks:
 - [`langgraph_demo.ipynb`](examples/langgraph_demo.ipynb) — wrapping a LangGraph compiled graph
 - [`crewai_demo.ipynb`](examples/crewai_demo.ipynb) — wrapping a CrewAI crew
 - [`autogen_demo.ipynb`](examples/autogen_demo.ipynb) — wrapping an AutoGen agent
+
+### Integration Tests
+
+End-to-end tests that verify NormLayer works with real frameworks and AWS services.
+
+**Setup:**
+
+```bash
+pip install normlayer[all] langgraph langchain-anthropic crewai autogen-agentchat "autogen-ext[anthropic]" python-dotenv
+cp examples/.env.example examples/.env
+# Fill in your API keys in examples/.env
+```
+
+**Required environment variables** (see `examples/.env.example`):
+
+| Variable | Required for |
+|----------|-------------|
+| `ANTHROPIC_API_KEY` | LangGraph, CrewAI, AutoGen tests |
+| `AWS_DEFAULT_REGION` | S3 and SageMaker tests |
+| `NORMLAYER_S3_BUCKET` | S3 and SageMaker tests |
+| `SAGEMAKER_ROLE_ARN` | SageMaker test only |
+
+**Run all tests:**
+
+```bash
+python examples/integration_test.py
+
+# Skip AWS tests
+SKIP_AWS=1 python examples/integration_test.py
+
+# Skip only SageMaker
+SKIP_SAGEMAKER=1 python examples/integration_test.py
+```
+
+**Individual tests:**
+
+| Script | What it tests |
+|--------|--------------|
+| `test_langgraph_e2e.py` | 2-node planner→executor graph with policy enforcement |
+| `test_crewai_e2e.py` | 2-agent crew (researcher + writer) with role-based policies |
+| `test_autogen_e2e.py` | Async agent with response checking |
+| `test_aws_e2e.py` | S3 violation logging, flush, and retrieval |
+| `test_sagemaker_e2e.py` | SageMaker Processing Job launch and status polling |
 
 ## Development
 
